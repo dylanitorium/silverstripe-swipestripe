@@ -38,6 +38,7 @@ class Order extends DataObject implements PermissionProvider {
 
 		'TotalPrice' => 'Decimal(19,8)',
 		'SubTotalPrice' => 'Decimal(19,8)',
+		'IsReceiptSent' => 'Boolean',
 
 		'BaseCurrency' => 'Varchar(3)',
 		'BaseCurrencySymbol' => 'Varchar(10)',
@@ -397,11 +398,16 @@ class Order extends DataObject implements PermissionProvider {
 		$this->PaymentStatus = ($this->getPaid()) ? 'Paid' : 'Unpaid';
 		$this->write();
 
-		ReceiptEmail::create($this->Member(), $this)
-			->send();
-		NotificationEmail::create($this->Member(), $this)
-			->send();
+		if(!$this->IsReceiptSent){
+			ReceiptEmail::create($this->Member(), $this)
+				->send();
+			NotificationEmail::create($this->Member(), $this)
+				->send();
+			$this->IsReceiptSent = true;
+			$this->write();
+		}
 
+	
 		$this->extend('onAfterPayment');
 	}
 
